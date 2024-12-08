@@ -58,15 +58,3 @@ def pytest_unconfigure(config: Config) -> None:
     if junitxray is not None:
         del config._junitxray
         config.pluginmanager.unregister(junitxray)
-
-"""
-@pytest.hookimpl(hookwrapper=True):
-def pytest_runtest_makereport(item: Item, call: Callinfo) -> Generator[None, _Result, None]:
-    '''writing the actual report file'''
-    outcome = yield
-    
-    if call.when == "call":
-        report = outcome.get_result()
-        classname = os.path.basename(item.path)
-        rep.testcase
-"""
