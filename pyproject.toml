@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+authors = [
+    { name="Pascal Vaudrevange", email="pascal@vaudrevange.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Pytest",
+    "License :: OSI Approved :: MIT license",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9"
+]
+dependencies = ["pytest", "lxml"]
+description = "Export test results in an augmented JUnit format for usage with Xray ()"
+dynamic = ["version"]
+license = {text = "MIT license"}
+name = "pytest-junit-xray"
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["xray", "pytest", "junit"]
+
+[project.urls]
+Changelog = "https://github.com/PascalVaudrevange/pytest-junit-xray-xml/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/PascalVaudrevange/pytest-junit-xray-xml"
+Issues = "https://github.com/PascalVaudrevange/pytest-junit-xray-xml/issues"
+Repository = "https://github.com/PascalVaudrevange/pytest-junit-xray-xml.git"
+
+[project.optional-dependencies]
+test = [
+    "pytest-cov"
+]
+build = [
+    "build"
+]
+deploy = [
+    "twine"
+]
+
+[project.entry-points.pytest11]
+pytest_junit_xray = "pytest_junit_xray.plugin"
+
+[tool.setuptools.package-dir]
+pytest_junit_xray = "src"
+
+[tool.setuptools_scm]
+version_file = "src/_version.py"
+version_scheme = "release-branch-semver"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
