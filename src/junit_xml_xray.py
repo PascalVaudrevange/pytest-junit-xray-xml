@@ -3,7 +3,7 @@ import pathlib
 import platform
 import time
 from typing import TYPE_CHECKING
-from xml.etree.ElementTree import Element, ElementTree
+from xml.etree.ElementTree import Element, ElementTree, indent
 from xml.sax.saxutils import escape, quoteattr
 
 from .exceptions import MoreThanOneTestDescriptionError
@@ -67,10 +67,12 @@ class LogJunitXrayXml(object):
         self.suite_node.set("skipped", f"{self._get_number_of_skipped_tests()}")
         self.suite_node.set("tests", f"{self._get_number_of_tests()}")
         self.suite_node.set("errors", f"{self._get_number_of_errors()}")
+        indent(self.element_tree, space="    ", level=0)
         self.element_tree.write(
             self.xmlfile, 
-            #doctype='<?xml version="1.0" encoding="UTF-8"?>', 
-            #encoding="UTF-8"
+            xml_declaration='<?xml version="1.0" encoding="UTF-8"?>', 
+            encoding="UTF-8",
+            method="xml"
         )
 
     def pytest_runtest_logstart(self, nodeid: str, location: list) -> None:
