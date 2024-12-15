@@ -9,7 +9,9 @@ from _pytest.fixtures import FixtureRequest
 
 def __get_test_evidence_property_item(name: str, content: str) -> Element:
     result = Element("item", name=name)
-    result.text = base64.b64encode(content).decode("ascii")
+    # need to decode as ascii as the serializer of xml.etree cannot deal with 
+    # bytes
+    result.text = base64.b64encode(content).decode("ascii") 
     return result
 
 
