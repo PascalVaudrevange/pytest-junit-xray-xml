@@ -33,12 +33,7 @@ class LogJunitXrayXml(object):
         self.log_passing_tests = log_passing_tests
         self.suite_start_time = None
         self.suite_node_attributes = {}
-        root = etree.XML('<?xml version="1.0"?><test_suite/>')
-        self.element_tree = etree.ElementTree(root)
-        #self._suite_node = etree.Element(
-        #    "test_suite"
-        #)
-        self.test_result_node = None
+        self.element_tree = etree.ElementTree(etree.Element("test_suite"))
     
     @property
     def suite_node(self):
@@ -79,32 +74,33 @@ class LogJunitXrayXml(object):
         self.element_tree.write(self.xmlfile, pretty_print=True, doctype='<?xml version="1.0" encoding="UTF-8"?>')
 
     def pytest_runtest_logstart(self, nodeid: str, location: list) -> None:
-        self.test_result_node = etree.Element(
+        self.location = location
+        
+    def pytest_runtest_logreport(self, report: TestReport) -> None:
+        test_result_node = etree.Element(
             "testcase",
             classname="",
-            name=location[2],
-            file=pathlib.Path(location[0]).as_posix(),
-            line=f'{location[1]}'
+            name=self.location[2],
+            file=pathlib.Path(self.location[0]).as_posix(),
+            line=f'{self.location[1]}',
+            duration=f'{report.duration}'
         )
-        self.suite_node.append(self.test_result_node)
-
-    def pytest_runtest_logreport(self, report: TestReport) -> None:
-        self.test_result_node.attrib['duration'] = f'{report.duration}'
+        self.suite_node.append(test_result_node)
         if report.when == "call":
             if report.passed:
                 pass
             elif report.failed:
                 failure_node = etree.Element("failure")
                 failure_node.text = escape(report.longreprtext)
-                self.test_result_node.append(failure_node)
+                test_result_node.append(failure_node)
             elif report.skipped:
                 skipped_node = etree.Element("skipped", message=quoteattr(report.longreprtext))
-                self.test_result_node.append(skipped_node)
-            _process_caplog_capstdout_capstderr(report, self.test_result_node, self.logging, self.log_passing_tests)
-            _process_test_evidences(report.user_properties, self.test_result_node)
-            _process_test_description(report.user_properties, self.test_result_node)
+                test_result_node.append(skipped_node)
+            _process_caplog_capstdout_capstderr(report, test_result_node, self.logging, self.log_passing_tests)
+            _process_test_evidences(report.user_properties, test_result_node)
+            _process_test_description(report.user_properties, test_result_node)
         else:
-            _process_error(report, self.test_result_node)
+            _process_error(report, test_result_node)
 
 def _find_items_from_user_properties(user_properties: list[tuple], name: str) -> list:
     result = [
