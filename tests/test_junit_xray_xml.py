@@ -1,6 +1,7 @@
 import pytest
 from pytest_junit_xray import record_test_evidence, record_test_description
 
+
 def test_record_pass(record_test_evidence, record_test_description):
     evidences = {
         "file1": "My file content is text".encode("UTF-8")

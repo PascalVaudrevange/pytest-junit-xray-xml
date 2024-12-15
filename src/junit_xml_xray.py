@@ -119,7 +119,9 @@ def _process_test_evidences(user_properties: list[tuple[str, object]], test_resu
             "property", name="testrun_evidence"
         )
         for test_evidence_ in test_evidences:
-            test_evidence_node.append(test_evidence_)
+            item_node = Element("item", name=test_evidence_["filename"])
+            item_node.text = test_evidence_["content"]
+            test_evidence_node.append(item_node)
         test_result_node.append(test_evidence_node)
 
 def _process_test_description(user_properties: list[tuple[str, object]], test_result_node: Element) -> None:

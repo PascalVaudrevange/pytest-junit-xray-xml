@@ -1,17 +1,16 @@
 import base64
 import typing
-from xml.etree.ElementTree import Element
 
 import pytest
 
 from _pytest.fixtures import FixtureRequest
 
 
-def __get_test_evidence_property_item(name: str, content: str) -> Element:
-    result = Element("item", name=name)
-    # need to decode as ascii as the serializer of xml.etree cannot deal with 
-    # bytes
-    result.text = base64.b64encode(content).decode("ascii") 
+def __get_test_evidence_property_item(name: str, content: str) -> dict:
+    result = {
+        "filename": name,
+        "content": base64.b64encode(content).decode("ascii") 
+    }
     return result
 
 
