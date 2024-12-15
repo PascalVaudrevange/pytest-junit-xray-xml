@@ -28,7 +28,6 @@ class LogJunitXrayXml(object):
         self.logging = logging
         self.log_passing_tests = log_passing_tests
         self.suite_start_time = None
-        self.suite_node_attributes = {}
         self.element_tree = ElementTree(Element("test_suite"))
     
     @property
