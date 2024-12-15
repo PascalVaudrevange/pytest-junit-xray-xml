@@ -71,7 +71,12 @@ class LogJunitXrayXml(object):
         self.suite_node.set("skipped", f"{self._get_number_of_skipped_tests()}")
         self.suite_node.set("tests", f"{self._get_number_of_tests()}")
         self.suite_node.set("errors", f"{self._get_number_of_errors()}")
-        self.element_tree.write(self.xmlfile, pretty_print=True, doctype='<?xml version="1.0" encoding="UTF-8"?>')
+        self.element_tree.write(
+            self.xmlfile, 
+            pretty_print=True, 
+            doctype='<?xml version="1.0" encoding="UTF-8"?>', 
+            encoding="UTF-8"
+        )
 
     def pytest_runtest_logstart(self, nodeid: str, location: list) -> None:
         self.location = location
