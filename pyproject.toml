@@ -14,7 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9"
 ]
-dependencies = ["pytest", "lxml"]
+dependencies = ["pytest"]
 description = "Export test results in an augmented JUnit format for usage with Xray ()"
 dynamic = ["version"]
 license = {text = "MIT license"}

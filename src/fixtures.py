@@ -1,15 +1,15 @@
 import base64
 import typing
+from xml.etree.ElementTree import Element
 
-from lxml import etree
 import pytest
 
 from _pytest.fixtures import FixtureRequest
 
 
-def __get_test_evidence_property_item(name: str, content: str) -> etree.Element:
-    result = etree.Element("item", name=name)
-    result.text = base64.b64encode(content)
+def __get_test_evidence_property_item(name: str, content: str) -> Element:
+    result = Element("item", name=name)
+    result.text = base64.b64encode(content).decode("ascii")
     return result
 
 

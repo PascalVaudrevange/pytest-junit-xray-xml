@@ -3,9 +3,8 @@ import pathlib
 import platform
 import time
 from typing import TYPE_CHECKING
+from xml.etree.ElementTree import Element, ElementTree
 from xml.sax.saxutils import escape, quoteattr
-
-from lxml import etree
 
 from .exceptions import MoreThanOneTestDescriptionError
 
@@ -16,9 +15,6 @@ from _pytest.nodes import Item
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
 
-class Element(etree._Element):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
 
 class LogJunitXrayXml(object):
@@ -33,7 +29,7 @@ class LogJunitXrayXml(object):
         self.log_passing_tests = log_passing_tests
         self.suite_start_time = None
         self.suite_node_attributes = {}
-        self.element_tree = etree.ElementTree(etree.Element("test_suite"))
+        self.element_tree = ElementTree(Element("test_suite"))
     
     @property
     def suite_node(self):
@@ -73,16 +69,15 @@ class LogJunitXrayXml(object):
         self.suite_node.set("errors", f"{self._get_number_of_errors()}")
         self.element_tree.write(
             self.xmlfile, 
-            pretty_print=True, 
-            doctype='<?xml version="1.0" encoding="UTF-8"?>', 
-            encoding="UTF-8"
+            #doctype='<?xml version="1.0" encoding="UTF-8"?>', 
+            #encoding="UTF-8"
         )
 
     def pytest_runtest_logstart(self, nodeid: str, location: list) -> None:
         self.location = location
         
     def pytest_runtest_logreport(self, report: TestReport) -> None:
-        test_result_node = etree.Element(
+        test_result_node = Element(
             "testcase",
             classname="",
             name=self.location[2],
@@ -95,11 +90,11 @@ class LogJunitXrayXml(object):
             if report.passed:
                 pass
             elif report.failed:
-                failure_node = etree.Element("failure")
+                failure_node = Element("failure")
                 failure_node.text = escape(report.longreprtext)
                 test_result_node.append(failure_node)
             elif report.skipped:
-                skipped_node = etree.Element("skipped", message=quoteattr(report.longreprtext))
+                skipped_node = Element("skipped", message=quoteattr(report.longreprtext))
                 test_result_node.append(skipped_node)
             _process_caplog_capstdout_capstderr(report, test_result_node, self.logging, self.log_passing_tests)
             _process_test_evidences(report.user_properties, test_result_node)
@@ -116,17 +111,17 @@ def _find_items_from_user_properties(user_properties: list[tuple], name: str) ->
     return result
 
 
-def _process_test_evidences(user_properties: list[tuple[str, object]], test_result_node: etree.Element) -> None:
+def _process_test_evidences(user_properties: list[tuple[str, object]], test_result_node: Element) -> None:
     test_evidences = _find_items_from_user_properties(user_properties, "test_evidence")
     if test_evidences:
-        test_evidence_node = etree.Element(
+        test_evidence_node = Element(
             "property", name="testrun_evidence"
         )
         for test_evidence_ in test_evidences:
             test_evidence_node.append(test_evidence_)
         test_result_node.append(test_evidence_node)
 
-def _process_test_description(user_properties: list[tuple[str, object]], test_result_node: etree.Element) -> None:
+def _process_test_description(user_properties: list[tuple[str, object]], test_result_node: Element) -> None:
     test_descriptions = _find_items_from_user_properties(user_properties, "test_description")
     if test_descriptions:
         if len(test_descriptions) > 1:
@@ -134,17 +129,17 @@ def _process_test_description(user_properties: list[tuple[str, object]], test_re
                 "Found %d test description: '%s'",
                 len(test_descriptions), test_descriptions
             )
-        property_node = etree.Element("property", test_descriptions=quoteattr(test_descriptions[0]))
+        property_node = Element("property", test_descriptions=quoteattr(test_descriptions[0]))
         test_result_node.append(property_node)
 
-def _process_error(report: TestReport, test_result_node: etree.Element) -> None:
+def _process_error(report: TestReport, test_result_node: Element) -> None:
     if report.failed:
         reprcrash = getattr(report.longrepr, "reprcrash", None)
         message = quoteattr(f"error during {report.when}: {reprcrash or str(report.longrepr)}")
-        error_node = etree.Element("error", message=message)
+        error_node = Element("error", message=message)
         test_result_node.append(error_node)
 
-def _process_caplog_capstdout_capstderr(report: TestReport, test_result_node: etree.Element, logging: str, log_passing_tests: str) -> None:
+def _process_caplog_capstdout_capstderr(report: TestReport, test_result_node: Element, logging: str, log_passing_tests: str) -> None:
     def _prepare_content(self, content: str, header: str) -> str:
             return escape("\n".join([header.center(80, "-"), content, ""]))
 
@@ -157,10 +152,10 @@ def _process_caplog_capstdout_capstderr(report: TestReport, test_result_node: et
         if report.capstdout and logging in ["all", "log"]:
             stdout += _prepare_content(report.longreprtext, " Captured Out ")
         if stdout: 
-            stdout_node = etree.Element("system-out")
+            stdout_node = Element("system-out")
             stdout_node.text = stdout
             test_result_node.append(stdout_node)
         if report.capstderr and logging in ["system-err", "out-err", "all"]:
-            stderr_node = etree.Element("system-err")
+            stderr_node = Element("system-err")
             stderr_node.text = _prepare_content(report.longreprtext, " Captured Err ")
             test_result_node.append(stderr_node)
