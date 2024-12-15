@@ -16,6 +16,10 @@ from _pytest.nodes import Item
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
 
+class Element(etree._Element):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
 
 class LogJunitXrayXml(object):
     def __init__(self, logfile: str, logging: str = "no", log_passing_tests: bool = True) -> None:
@@ -29,11 +33,17 @@ class LogJunitXrayXml(object):
         self.log_passing_tests = log_passing_tests
         self.suite_start_time = None
         self.suite_node_attributes = {}
-        self.suite_node = etree.Element(
-            "test_suite"
-        )
+        root = etree.XML('<?xml version="1.0"?><test_suite/>')
+        self.element_tree = etree.ElementTree(root)
+        #self._suite_node = etree.Element(
+        #    "test_suite"
+        #)
         self.test_result_node = None
-        
+    
+    @property
+    def suite_node(self):
+        result = self.element_tree.getroot()
+        return result
 
     def _get_number_of_failed_tests(self) -> int:
         result = len(self.suite_node.findall("testcase/failure"))
@@ -66,14 +76,7 @@ class LogJunitXrayXml(object):
         self.suite_node.set("skipped", f"{self._get_number_of_skipped_tests()}")
         self.suite_node.set("tests", f"{self._get_number_of_tests()}")
         self.suite_node.set("errors", f"{self._get_number_of_errors()}")
-
-        with open(self.xmlfile, "w", encoding="utf-8") as f:
-            f.write('<?xml version="1.0" encoding="utf-8"?>\n')
-            f.write(
-                etree.tostring(
-                    self.suite_node, encoding="unicode", pretty_print=True
-                )
-            )
+        self.element_tree.write(self.xmlfile, pretty_print=True, doctype='<?xml version="1.0" encoding="UTF-8"?>')
 
     def pytest_runtest_logstart(self, nodeid: str, location: list) -> None:
         self.test_result_node = etree.Element(
