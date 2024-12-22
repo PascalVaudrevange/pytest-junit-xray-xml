@@ -78,30 +78,33 @@ class LogJunitXrayXml(object):
         self.location = location
         
     def pytest_runtest_logreport(self, report: TestReport) -> None:
-        test_result_node = Element(
-            "testcase",
-            classname="",
-            name=self.location[2],
-            file=pathlib.Path(self.location[0]).as_posix(),
-            line=f'{self.location[1]}',
-            duration=f'{report.duration}'
-        )
-        self.suite_node.append(test_result_node)
-        if report.when == "call":
-            if report.passed:
-                pass
+        if report.when == "call" or report.failed:
+            test_result_node = Element(
+                "testcase",
+                classname="",
+                name=self.location[2],
+                file=pathlib.Path(self.location[0]).as_posix(),
+                line=f'{self.location[1]}',
+                duration=f'{report.duration}'
+            )
+            self.suite_node.append(test_result_node)
+            if report.when == "call":
+                
+                if report.passed:
+                    pass
+                elif report.failed:
+                    failure_node = Element("failure")
+                    failure_node.text = escape(report.longreprtext)
+                    test_result_node.append(failure_node)
+                elif report.skipped:
+                    skipped_node = Element("skipped", message=quoteattr(report.longreprtext))
+                    test_result_node.append(skipped_node)
+                _process_caplog_capstdout_capstderr(report, test_result_node, self.logging, self.log_passing_tests)
+                _process_test_evidences(report.user_properties, test_result_node)
+                _process_test_description(report.user_properties, test_result_node)
             elif report.failed:
-                failure_node = Element("failure")
-                failure_node.text = escape(report.longreprtext)
-                test_result_node.append(failure_node)
-            elif report.skipped:
-                skipped_node = Element("skipped", message=quoteattr(report.longreprtext))
-                test_result_node.append(skipped_node)
-            _process_caplog_capstdout_capstderr(report, test_result_node, self.logging, self.log_passing_tests)
-            _process_test_evidences(report.user_properties, test_result_node)
-            _process_test_description(report.user_properties, test_result_node)
-        else:
-            _process_error(report, test_result_node)
+                _process_error(report, test_result_node)
+
 
 def _find_items_from_user_properties(user_properties: list[tuple], name: str) -> list:
     result = [
@@ -136,11 +139,10 @@ def _process_test_description(user_properties: list[tuple[str, object]], test_re
         test_result_node.append(property_node)
 
 def _process_error(report: TestReport, test_result_node: Element) -> None:
-    if report.failed:
-        reprcrash = getattr(report.longrepr, "reprcrash", None)
-        message = quoteattr(f"error during {report.when}: {reprcrash or str(report.longrepr)}")
-        error_node = Element("error", message=message)
-        test_result_node.append(error_node)
+    reprcrash = getattr(report.longrepr, "reprcrash", None)
+    message = quoteattr(f"error during {report.when}: {reprcrash or str(report.longrepr)}")
+    error_node = Element("error", message=message)
+    test_result_node.append(error_node)
 
 def _process_caplog_capstdout_capstderr(report: TestReport, test_result_node: Element, logging: str, log_passing_tests: str) -> None:
     def _prepare_content(self, content: str, header: str) -> str:
