@@ -31,12 +31,22 @@ def record_test_evidence(request: FixtureRequest) -> typing.Callable[dict, None]
 
 
 @pytest.fixture
+def record_test_key(request: FixtureRequest) -> typing.Callable[str, None]:
+    def _record_test_key(test_key: str) -> None:
+        request.node.user_properties.append(
+            ("test_key", test_key)
+        )
+    return _record_test_key
+
+
+@pytest.fixture
 def record_test_id(request: FixtureRequest) -> typing.Callable[str, None]:
     def _record_test_id(test_id: str) -> None:
         request.node.user_properties.append(
             ("test_id", test_id)
         )
     return _record_test_id
+
 
 
 @pytest.fixture

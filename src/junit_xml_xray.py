@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from xml.etree.ElementTree import Element, ElementTree, indent
 from xml.sax.saxutils import escape, quoteattr
 
-from .exceptions import MoreThanOneTestDescriptionError
+from .exceptions import MoreThanOneTestDescriptionError, MoreThanOneTestSummaryError
 
 #if TYPE_CHECKING:
 from _pytest.config import Config
@@ -100,10 +100,24 @@ class LogJunitXrayXml(object):
                     skipped_node = Element("skipped", message=quoteattr(report.longreprtext))
                     test_result_node.append(skipped_node)
                 _process_caplog_capstdout_capstderr(report, test_result_node, self.logging, self.log_passing_tests)
-                _process_test_evidences(report.user_properties, test_result_node)
-                _process_test_description(report.user_properties, test_result_node)
+                properties_node = _get_properties_node(test_result_node)
+                _process_test_evidences(report.user_properties, properties_node)
+                _process_test_description(report.user_properties, properties_node)
+                _process_test_summary(report.user_properties, properties_node)
+                _process_test_key(report.user_properties, properties_node)
+                _process_test_id(report.user_properties, properties_node)
             elif report.failed:
                 _process_error(report, test_result_node)
+
+
+def _get_properties_node(test_result_node: Element) -> Element:
+    properties_node = test_result_node.find("./properties")
+    if properties_node:
+        result = properties_node
+    else:
+        result = Element("properties")
+        test_result_node.append(result)
+    return result
 
 
 def _find_items_from_user_properties(user_properties: list[tuple], name: str) -> list:
@@ -115,7 +129,7 @@ def _find_items_from_user_properties(user_properties: list[tuple], name: str) ->
     return result
 
 
-def _process_test_evidences(user_properties: list[tuple[str, object]], test_result_node: Element) -> None:
+def _process_test_evidences(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
     test_evidences = _find_items_from_user_properties(user_properties, "test_evidence")
     if test_evidences:
         test_evidence_node = Element(
@@ -125,9 +139,9 @@ def _process_test_evidences(user_properties: list[tuple[str, object]], test_resu
             item_node = Element("item", name=test_evidence_["filename"])
             item_node.text = test_evidence_["content"]
             test_evidence_node.append(item_node)
-        test_result_node.append(test_evidence_node)
+        properties_node.append(test_evidence_node)
 
-def _process_test_description(user_properties: list[tuple[str, object]], test_result_node: Element) -> None:
+def _process_test_description(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
     test_descriptions = _find_items_from_user_properties(user_properties, "test_description")
     if test_descriptions:
         if len(test_descriptions) > 1:
@@ -135,14 +149,52 @@ def _process_test_description(user_properties: list[tuple[str, object]], test_re
                 "Found %d test description: '%s'",
                 len(test_descriptions), test_descriptions
             )
-        property_node = Element("property", test_descriptions=quoteattr(test_descriptions[0]))
-        test_result_node.append(property_node)
+        property_node = Element("property", name="test_description")
+        property_node.text = escape(test_descriptions[0])
+        properties_node.append(property_node)
+
+def _process_test_summary(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
+    test_summary = _find_items_from_user_properties(user_properties, "test_summary")
+    if test_summary:
+        if len(test_summary) > 1:
+            raise MoreThanOneTestSummaryError(
+                "Found %d test summaries: '%s'",
+                len(test_summary), test_summary
+            )
+        property_node = Element("property", name="test_summary", value=test_summary[0])
+        properties_node.append(property_node)
+
+
+def _process_test_id(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
+    test_id = _find_items_from_user_properties(user_properties, "test_id")
+    if test_id:
+        if len(test_id) > 1:
+            raise MoreThanOneTestSummaryError(
+                "Found %d test ids: '%s'",
+                len(test_id), test_id
+            )
+        property_node = Element("property", name="test_id", value=test_id[0])
+        properties_node.append(property_node)
+
+
+def _process_test_key(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
+    test_id = _find_items_from_user_properties(user_properties, "test_key")
+    if test_id:
+        if len(test_id) > 1:
+            raise MoreThanOneTestSummaryError(
+                "Found %d test keys: '%s'",
+                len(test_id), test_id
+            )
+        property_node = Element("property", name="test_key", value=test_id[0])
+        properties_node.append(property_node)
+
 
 def _process_error(report: TestReport, test_result_node: Element) -> None:
     reprcrash = getattr(report.longrepr, "reprcrash", None)
     message = quoteattr(f"error during {report.when}: {reprcrash or str(report.longrepr)}")
     error_node = Element("error", message=message)
     test_result_node.append(error_node)
+
 
 def _process_caplog_capstdout_capstderr(report: TestReport, test_result_node: Element, logging: str, log_passing_tests: str) -> None:
     def _prepare_content(self, content: str, header: str) -> str:
