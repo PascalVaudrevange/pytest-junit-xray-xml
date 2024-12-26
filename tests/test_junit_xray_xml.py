@@ -2,15 +2,7 @@ from xml.etree import ElementTree
 
 import pytest
 from _pytest.pytester import Pytester
-
-
-def btest_record_fail():
-    assert False
-
-def btest_skipped():
-    pytest.skip()
-    assert False
-
+from pytest_junit_xray.exceptions import MoreThanOneItemError
 
 class bTestErrorDuringSetup():
     def setup_method(self, test_method):
@@ -72,14 +64,29 @@ def test_single_description(pytester: Pytester):
     actual_description = root_node.find("./testcase/properties/property[@name='test_description']")
     assert actual_description.text == expected_description
 
+def test_single_description(pytester: Pytester):
+    expected_description = "This is my test description line 1\nand line 2."
+    pytester.makepyfile(f"""
+    import pytest
+    from pytest_junit_xray import record_test_description
+
+
+    def test_record_pass(record_test_description):
+        record_test_description("This is my test description line 1")
+        record_test_description("and line 2.")
+        assert True
+
+    """)
+    _, root_node = run_and_parse(pytester, None)
+    actual_description = root_node.find("./testcase/properties/property[@name='test_description']")
+    assert actual_description.text == expected_description
+
 
 def test_single_summary(pytester: Pytester):
     expected_summary = "This is my test summary"
     pytester.makepyfile(f"""
-    import pytest
     from pytest_junit_xray import record_test_summary
-
-
+                        
     def test_record_pass(record_test_summary):
         record_test_summary("{expected_summary}")
         assert True
@@ -90,12 +97,23 @@ def test_single_summary(pytester: Pytester):
     assert actual_description.attrib["value"]== expected_summary
 
 
+def test_multiple_summaries(pytester: Pytester):
+    pytester.makepyfile("""
+    from pytest_junit_xray import record_test_summary
+                        
+    def test_record_pass(record_test_summary):
+        record_test_summary("Summary 1")
+        record_test_summary("Summary 2")
+        assert True
+    """)
+    with pytest.raises(MoreThanOneItemError) as _:
+        run_and_parse(pytester, None)
+
+
 def test_single_key(pytester: Pytester):
     expected_key = "JIRA-1234"
     pytester.makepyfile(f"""
-    import pytest
     from pytest_junit_xray import record_test_key
-
 
     def test_record_pass(record_test_key):
         record_test_key("{expected_key}")

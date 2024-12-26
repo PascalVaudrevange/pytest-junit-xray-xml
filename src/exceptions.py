@@ -1,5 +1,12 @@
-class MoreThanOneTestSummaryError(Exception):
+class MoreThanOneItemError(Exception):
     pass
 
-class MoreThanOneTestDescriptionError(Exception):
+class MoreThanOneTestSummaryError(MoreThanOneItemError):
+    pass
+
+
+class MoreThanOneTestKeyError(MoreThanOneItemError):
+    pass
+
+class MoreThanOneTestIdError(MoreThanOneItemError):
     pass

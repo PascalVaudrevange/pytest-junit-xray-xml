@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from xml.etree.ElementTree import Element, ElementTree, indent
 from xml.sax.saxutils import escape, quoteattr
 
-from .exceptions import MoreThanOneTestDescriptionError, MoreThanOneTestSummaryError
+from .exceptions import MoreThanOneTestSummaryError, MoreThanOneTestIdError, MoreThanOneTestKeyError
+from .utils import find_items_from_user_properties
 
 #if TYPE_CHECKING:
 from _pytest.config import Config
@@ -120,17 +121,8 @@ def _get_properties_node(test_result_node: Element) -> Element:
     return result
 
 
-def _find_items_from_user_properties(user_properties: list[tuple], name: str) -> list:
-    result = [
-        item_
-        for name_, item_ in user_properties
-        if name_ == name
-    ]
-    return result
-
-
 def _process_test_evidences(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
-    test_evidences = _find_items_from_user_properties(user_properties, "test_evidence")
+    test_evidences = find_items_from_user_properties(user_properties, "test_evidence")
     if test_evidences:
         test_evidence_node = Element(
             "property", name="testrun_evidence"
@@ -141,20 +133,17 @@ def _process_test_evidences(user_properties: list[tuple[str, object]], propertie
             test_evidence_node.append(item_node)
         properties_node.append(test_evidence_node)
 
+
 def _process_test_description(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
-    test_descriptions = _find_items_from_user_properties(user_properties, "test_description")
-    if test_descriptions:
-        if len(test_descriptions) > 1:
-            raise MoreThanOneTestDescriptionError(
-                "Found %d test description: '%s'",
-                len(test_descriptions), test_descriptions
-            )
-        property_node = Element("property", name="test_description")
-        property_node.text = escape(test_descriptions[0])
-        properties_node.append(property_node)
+    test_descriptions = find_items_from_user_properties(user_properties, "test_description")
+    test_description = "\n".join(test_descriptions)
+    property_node = Element("property", name="test_description")
+    property_node.text = escape(test_description)
+    properties_node.append(property_node)
+
 
 def _process_test_summary(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
-    test_summary = _find_items_from_user_properties(user_properties, "test_summary")
+    test_summary = find_items_from_user_properties(user_properties, "test_summary")
     if test_summary:
         if len(test_summary) > 1:
             raise MoreThanOneTestSummaryError(
@@ -166,10 +155,10 @@ def _process_test_summary(user_properties: list[tuple[str, object]], properties_
 
 
 def _process_test_id(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
-    test_id = _find_items_from_user_properties(user_properties, "test_id")
+    test_id = find_items_from_user_properties(user_properties, "test_id")
     if test_id:
         if len(test_id) > 1:
-            raise MoreThanOneTestSummaryError(
+            raise MoreThanOneTestIdError(
                 "Found %d test ids: '%s'",
                 len(test_id), test_id
             )
@@ -178,14 +167,14 @@ def _process_test_id(user_properties: list[tuple[str, object]], properties_node:
 
 
 def _process_test_key(user_properties: list[tuple[str, object]], properties_node: Element) -> None:
-    test_id = _find_items_from_user_properties(user_properties, "test_key")
-    if test_id:
-        if len(test_id) > 1:
-            raise MoreThanOneTestSummaryError(
+    test_keys = find_items_from_user_properties(user_properties, "test_key")
+    if test_keys:
+        if len(test_keys) > 1:
+            raise MoreThanOneTestKeyError(
                 "Found %d test keys: '%s'",
-                len(test_id), test_id
+                len(test_keys), test_keys
             )
-        property_node = Element("property", name="test_key", value=test_id[0])
+        property_node = Element("property", name="test_key", value=test_keys[0])
         properties_node.append(property_node)
 
 
