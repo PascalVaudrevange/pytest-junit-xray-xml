@@ -22,7 +22,7 @@ class TbestErrorDuringTeardown():
         assert True
 
 
-def run_and_parse(pytester: Pytester, family: str | None = "xunit1") -> tuple:
+def run_and_parse(pytester: Pytester, family: str = "xunit1") -> tuple:
     if family:
         args = ("-o", "junit_family=" + family)
     else:
