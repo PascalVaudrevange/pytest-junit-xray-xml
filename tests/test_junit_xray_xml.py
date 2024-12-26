@@ -1,6 +1,9 @@
+import logging
 from xml.etree import ElementTree
 
 from _pytest.pytester import Pytester
+
+logger = logging.getLogger(__name__)
 
 
 class bTestErrorDuringSetup():
@@ -24,8 +27,11 @@ def run_and_parse(pytester: Pytester, family: str | None = "xunit1") -> tuple:
         args = ("-o", "junit_family=" + family)
     else:
         args = ()
-    xml_path = pytester.path.joinpath("xray.xml")
+    xml_path = pytester.path / "xray.xml"
     result = pytester.runpytest(f"--junitxrayxml={xml_path}", *args)
+    print(
+        f"Files in folder '{pytester.path}': {list(pytester.path.iterdir())}"
+    )
     if family == "xunit2":
         with xml_path.open(encoding="utf-8") as f:
             pass  # schema.validate(f)
