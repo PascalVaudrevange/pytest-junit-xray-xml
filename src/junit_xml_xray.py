@@ -2,7 +2,6 @@ import os.path
 import pathlib
 import platform
 import time
-from typing import TYPE_CHECKING
 from xml.etree.ElementTree import Element, ElementTree, indent
 from xml.sax.saxutils import escape, quoteattr
 
@@ -13,7 +12,6 @@ from .exceptions import (
 )
 from .utils import find_items_from_user_properties
 
-#if TYPE_CHECKING:
 from _pytest.reports import TestReport
 
 
@@ -127,6 +125,9 @@ class LogJunitXrayXml(object):
                 _process_test_summary(report.user_properties, properties_node)
                 _process_test_key(report.user_properties, properties_node)
                 _process_test_id(report.user_properties, properties_node)
+
+                if len(properties_node) == 0:
+                    test_result_node.remove(properties_node)
             elif report.failed:
                 _process_error(report, test_result_node)
 
@@ -180,8 +181,7 @@ def _process_test_summary(user_properties: list[tuple[str, object]],
     if test_summary:
         if len(test_summary) > 1:
             raise MoreThanOneTestSummaryError(
-                "Found %d test summaries: '%s'",
-                len(test_summary), test_summary
+                f"Found {len(test_summary)} test summaries: '{test_summary}'",
             )
         property_node = Element(
             "property",
@@ -197,8 +197,7 @@ def _process_test_id(user_properties: list[tuple[str, object]],
     if test_id:
         if len(test_id) > 1:
             raise MoreThanOneTestIdError(
-                "Found %d test ids: '%s'",
-                len(test_id), test_id
+                f"Found {len(test_id)} test ids: 'test_id'"
             )
         property_node = Element("property", name="test_id", value=test_id[0])
         properties_node.append(property_node)
@@ -210,8 +209,7 @@ def _process_test_key(user_properties: list[tuple[str, object]],
     if test_keys:
         if len(test_keys) > 1:
             raise MoreThanOneTestKeyError(
-                "Found %d test keys: '%s'",
-                len(test_keys), test_keys
+                f"Found {len(test_keys)} test keys: 'test_keys'",
             )
         property_node = Element(
             "property",

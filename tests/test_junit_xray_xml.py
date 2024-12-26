@@ -22,6 +22,8 @@ class TbestErrorDuringTeardown():
 def run_and_parse(pytester: Pytester, family: str | None = "xunit1") -> tuple:
     if family:
         args = ("-o", "junit_family=" + family)
+    else:
+        args = ()
     xml_path = pytester.path.joinpath("xray.xml")
     result = pytester.runpytest(f"--junitxrayxml={xml_path}", *args)
     if family == "xunit2":

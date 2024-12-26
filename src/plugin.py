@@ -1,16 +1,10 @@
-from collections.abc import Generator
-import os.path
-from typing import TYPE_CHECKING
 import pytest
 
 from . import junit_xml_xray
 
-#if TYPE_CHECKING:
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
-from _pytest.nodes import Item
-from _pytest.runner import CallInfo
-from pluggy._result import _Result
+
 
 def pytest_addoption(parser: Parser) -> None:
     """Add pytest-junit-xray options"""
@@ -28,8 +22,8 @@ def pytest_addoption(parser: Parser) -> None:
         )
     )
     parser.addini(
-        "junit_suite_name", 
-        "Test suite name for JUnit report", 
+        "junit_suite_name",
+        "Test suite name for JUnit report",
         default="pytest"
     )
     parser.addini(
@@ -45,6 +39,7 @@ def pytest_addoption(parser: Parser) -> None:
         default="no"
     )
 
+
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: Config) -> None:
     xml_path = config.option.junit_xray_xml_path
@@ -52,6 +47,7 @@ def pytest_configure(config: Config) -> None:
     if xml_path and not hasattr(config, "workerinput"):
         config._junitxray = junit_xml_xray.LogJunitXrayXml(xml_path)
         config.pluginmanager.register(config._junitxray)
+
 
 def pytest_unconfigure(config: Config) -> None:
     junitxray = getattr(config, "_junitxray", None)
