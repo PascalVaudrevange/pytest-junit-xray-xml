@@ -13,7 +13,7 @@ def _record_single_item(user_properties, key: str, value: str):
     items = find_items_from_user_properties(user_properties, key)
     if items:
         raise MoreThanOneItemError(
-            "Found a '%s' alreay: '%s'", key, items[0]
+            f"Found a '{key}' already: '{items}'"
         )
     else:
         user_properties.append(

@@ -1,8 +1,6 @@
 from xml.etree import ElementTree
 
-import pytest
 from _pytest.pytester import Pytester
-from pytest_junit_xray.exceptions import MoreThanOneItemError
 
 
 class bTestErrorDuringSetup():
@@ -23,9 +21,9 @@ class TbestErrorDuringTeardown():
 
 def run_and_parse(pytester: Pytester, family: str | None = "xunit1") -> tuple:
     if family:
-        args = ("-o", "junit_family=" + family, *args)
+        args = ("-o", "junit_family=" + family)
     xml_path = pytester.path.joinpath("xray.xml")
-    result = pytester.runpytest(f"--junitxrayxml={xml_path}")
+    result = pytester.runpytest(f"--junitxrayxml={xml_path}", *args)
     if family == "xunit2":
         with xml_path.open(encoding="utf-8") as f:
             pass  # schema.validate(f)
@@ -120,8 +118,13 @@ def test_multiple_summaries(pytester: Pytester):
         record_test_summary("Summary 2")
         assert True
     """)
-    with pytest.raises(MoreThanOneItemError) as _:
-        run_and_parse(pytester, None)
+
+    result, _ = run_and_parse(pytester, None)
+    result.assert_outcomes(failed=1)
+    result.stdout.fnmatch_lines(
+        "* pytest_junit_xray.exceptions.MoreThanOneItemError: Found a "
+        "'test_summary' already: '['Summary 1'*"
+    )
 
 
 def test_single_key(pytester: Pytester):
@@ -139,3 +142,15 @@ def test_single_key(pytester: Pytester):
         "./testcase/properties/property[@name='test_key']"
     )
     assert actual_key.attrib["value"] == expected_key
+
+
+def test_pass(pytester: Pytester):
+    pytester.makepyfile("""
+    def test_pass():
+        assert True
+    """)
+    _, root_node = run_and_parse(pytester, None)
+    node = root_node.find(
+        "./testcase[@name='test_pass']"
+    )
+    assert len(node) == 0, ElementTree.tostring(node)
