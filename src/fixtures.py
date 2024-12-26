@@ -18,23 +18,24 @@ def _record_single_item(user_properties, key: str, value: str):
     else:
         user_properties.append(
             (key, value)
-    )
+        )
 
 
 def __get_test_evidence_property_item(name: str, content: str) -> dict:
     result = {
         "filename": name,
-        "content": base64.b64encode(content).decode("ascii") 
+        "content": base64.b64encode(content).decode("ascii")
     }
     return result
 
 
 @pytest.fixture
-def record_test_evidence(request: FixtureRequest) -> typing.Callable[[dict], None]:
+def record_test_evidence(request: FixtureRequest) -> typing.Callable[[dict],
+                                                                     None]:
     """records test evidence for consumption by the Jira Xray plugin
-    
+
     The evidence is attached to the test run object in Jira/Xray as files with"
-    names by their keys 
+    names by their keys
     """
     def _record_test_evidence(evidences: dict) -> None:
         for name_, evidence_ in evidences.items():
@@ -60,14 +61,20 @@ def record_test_id(request: FixtureRequest) -> typing.Callable[[str], None]:
 
 
 @pytest.fixture
-def record_test_summary(request: FixtureRequest) -> typing.Callable[[str], None]:
+def record_test_summary(request: FixtureRequest) -> typing.Callable[[str],
+                                                                    None]:
     def _record_test_summary(test_summary: str) -> None:
-        _record_single_item(request.node.user_properties, "test_summary", test_summary)
+        _record_single_item(
+            request.node.user_properties,
+            "test_summary",
+            test_summary
+        )
     return _record_test_summary
 
 
 @pytest.fixture
-def record_test_description(request: FixtureRequest) -> typing.Callable[[str], None]:
+def record_test_description(request: FixtureRequest) -> typing.Callable[[str],
+                                                                        None]:
     def _record_test_description(test_description: str) -> None:
         request.node.user_properties.append(
             ("test_description", test_description)
