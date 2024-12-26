@@ -1,6 +1,6 @@
 import pytest
 
-from . import junit_xml_xray
+from . import junit_xml_xray_xml
 
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
@@ -45,7 +45,7 @@ def pytest_configure(config: Config) -> None:
     xml_path = config.option.junit_xray_xml_path
     # prevent opening xml on work nodes (xdist)
     if xml_path and not hasattr(config, "workerinput"):
-        config._junitxray = junit_xml_xray.LogJunitXrayXml(xml_path)
+        config._junitxray = junit_xml_xray_xml.LogJunitXrayXml(xml_path)
         config.pluginmanager.register(config._junitxray)
 
 
