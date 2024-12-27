@@ -18,7 +18,7 @@ dependencies = ["pytest"]
 description = "Export test results in an augmented JUnit format for usage with Xray ()"
 dynamic = ["version"]
 license = {text = "MIT license"}
-name = "pytest-junit-xray"
+name = "pytest-junit-xray-xml"
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["xray", "pytest", "junit"]
@@ -41,10 +41,10 @@ deploy = [
 ]
 
 [project.entry-points.pytest11]
-pytest_junit_xray = "pytest_junit_xray.plugin"
+pytest_junit_xray_xml = "pytest_junit_xray_xml.plugin"
 
 [tool.setuptools.package-dir]
-pytest_junit_xray = "src"
+pytest_junit_xray_xml = "src"
 
 [tool.setuptools_scm]
 version_file = "src/_version.py"

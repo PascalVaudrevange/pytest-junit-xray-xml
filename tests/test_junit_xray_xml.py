@@ -39,7 +39,7 @@ def run_and_parse(pytester: Pytester, family: str = "xunit1") -> tuple:
 def test_single_evidence(pytester: Pytester):
     pytester.makepyfile("""
     import pytest
-    from pytest_junit_xray import record_test_evidence
+    from pytest_junit_xray_xml import record_test_evidence
 
 
     def test_record_pass(record_test_evidence):
@@ -62,7 +62,7 @@ def test_single_description(pytester: Pytester):
     expected_description = "This is my test description"
     pytester.makepyfile(f"""
     import pytest
-    from pytest_junit_xray import record_test_description
+    from pytest_junit_xray_xml import record_test_description
 
 
     def test_record_pass(record_test_description):
@@ -81,7 +81,7 @@ def test_multiple_descriptions(pytester: Pytester):
     expected_description = "This is my test description line 1\nand line 2."
     pytester.makepyfile("""
     import pytest
-    from pytest_junit_xray import record_test_description
+    from pytest_junit_xray_xml import record_test_description
 
 
     def test_record_pass(record_test_description):
@@ -100,7 +100,7 @@ def test_multiple_descriptions(pytester: Pytester):
 def test_single_summary(pytester: Pytester):
     expected_summary = "This is my test summary"
     pytester.makepyfile(f"""
-    from pytest_junit_xray import record_test_summary
+    from pytest_junit_xray_xml import record_test_summary
 
     def test_record_pass(record_test_summary):
         record_test_summary("{expected_summary}")
@@ -116,7 +116,7 @@ def test_single_summary(pytester: Pytester):
 
 def test_multiple_summaries(pytester: Pytester):
     pytester.makepyfile("""
-    from pytest_junit_xray import record_test_summary
+    from pytest_junit_xray_xml import record_test_summary
 
     def test_record_pass(record_test_summary):
         record_test_summary("Summary 1")
@@ -127,7 +127,7 @@ def test_multiple_summaries(pytester: Pytester):
     result, _ = run_and_parse(pytester, None)
     result.assert_outcomes(failed=1)
     result.stdout.fnmatch_lines(
-        "* pytest_junit_xray.exceptions.MoreThanOneItemError: Found a "
+        "* pytest_junit_xray_xml.exceptions.MoreThanOneItemError: Found a "
         "'test_summary' already: '['Summary 1'*"
     )
 
@@ -135,7 +135,7 @@ def test_multiple_summaries(pytester: Pytester):
 def test_single_key(pytester: Pytester):
     expected_key = "JIRA-1234"
     pytester.makepyfile(f"""
-    from pytest_junit_xray import record_test_key
+    from pytest_junit_xray_xml import record_test_key
 
     def test_record_pass(record_test_key):
         record_test_key("{expected_key}")
