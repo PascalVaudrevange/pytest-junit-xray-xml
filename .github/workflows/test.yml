@@ -4,14 +4,15 @@
 name: Python package
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches:
+    - "main"
+  push:
+    branches:
+    - "main"
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,4 +39,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest tests/
+        pytest tests/ --cov=pytest_junit_xml_xray
+
