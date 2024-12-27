@@ -2,5 +2,5 @@
 venv
 *egg-info
 __pycache__
-
+build
 src/_version.py
