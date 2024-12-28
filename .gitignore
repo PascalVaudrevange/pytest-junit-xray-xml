@@ -1,6 +1,8 @@
-.venv
-venv
+.coverage
+.venv*
+venv*
 *egg-info
 __pycache__
+.pytest_cache
 build
 src/_version.py

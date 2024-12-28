@@ -16,18 +16,24 @@ from _pytest.reports import TestReport
 
 
 class LogJunitXrayXml(object):
-    def __init__(self, logfile: str, logging: str = "no",
+    def __init__(self, logfile: str, logging: str = "no", family: str,
                  log_passing_tests: bool = True) -> None:
         """
 
+        :param family: determines the JUnit family
         :param logfile: name of the XML file
+        :param log_passing_tests:
         """
         xmlfile = os.path.expanduser(os.path.expandvars(logfile))
         self.xmlfile = os.path.normpath(os.path.abspath(xmlfile))
+        self.family = family
         self.logging = logging
         self.log_passing_tests = log_passing_tests
         self.suite_start_time = None
         self.element_tree = ElementTree(Element("test_suite"))
+
+        if self.family == "legacy":
+            self.family = "xunit1"
 
     @property
     def suite_node(self):
@@ -84,14 +90,27 @@ class LogJunitXrayXml(object):
 
     def pytest_runtest_logreport(self, report: TestReport) -> None:
         if report.when == "call" or report.failed:
-            test_result_node = Element(
-                "testcase",
-                classname="",
-                name=self.location[2],
-                file=pathlib.Path(self.location[0]).as_posix(),
-                line=f'{self.location[1]}',
-                duration=f'{report.duration}'
-            )
+            if self.familiy in ("xunit1", "xray") :
+                test_result_node = Element(
+                    "testcase",
+                    classname="",
+                    name=self.location[2],
+                    file=pathlib.Path(self.location[0]).as_posix(),
+                    line=f'{self.location[1]}',
+                    duration=f'{report.duration}'
+                )
+            elif self.family == "xunit2":
+                test_result_node = Element(
+                    "testcase",
+                    classname="",
+                    name=self.location[2],
+                    duration=f'{report.duration}'
+                )
+            else:
+                raise NotImplementedError(
+                    f"JUnit family '{self.family}' is not implemented. "
+                    "Aborting."
+                )
             self.suite_node.append(test_result_node)
             if report.when == "call":
 
@@ -113,21 +132,22 @@ class LogJunitXrayXml(object):
                     self.logging,
                     self.log_passing_tests
                 )
-                properties_node = _get_properties_node(test_result_node)
-                _process_test_evidences(
-                    report.user_properties,
-                    properties_node
-                )
-                _process_test_description(
-                    report.user_properties,
-                    properties_node
-                )
-                _process_test_summary(report.user_properties, properties_node)
-                _process_test_key(report.user_properties, properties_node)
-                _process_test_id(report.user_properties, properties_node)
+                if self.family == "xray":
+                    properties_node = _get_properties_node(test_result_node)
+                    _process_test_evidences(
+                        report.user_properties,
+                        properties_node
+                    )
+                    _process_test_description(
+                        report.user_properties,
+                        properties_node
+                    )
+                    _process_test_summary(report.user_properties, properties_node)
+                    _process_test_key(report.user_properties, properties_node)
+                    _process_test_id(report.user_properties, properties_node)
 
-                if len(properties_node) == 0:
-                    test_result_node.remove(properties_node)
+                    if len(properties_node) == 0:
+                        test_result_node.remove(properties_node)
             elif report.failed:
                 _process_error(report, test_result_node)
 

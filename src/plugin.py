@@ -39,6 +39,13 @@ def pytest_addoption(parser: Parser) -> None:
         default="no"
     )
 
+    parser.addini(
+        "junit_family",
+        "Emit XML for schema: one of legacy|xunit1|xunit2|xray",
+        default="xray",
+    )
+
+
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: Config) -> None:
