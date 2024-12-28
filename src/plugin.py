@@ -46,13 +46,16 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: Config) -> None:
-    xml_path = config.option.junit_xray_xml_path
+    logfile = config.option.junit_xray_xml_path
     # prevent opening xml on work nodes (xdist)
-    if xml_path and not hasattr(config, "workerinput"):
-        config._junitxray = junit_xml_xray_xml.LogJunitXrayXml(xml_path)
+    if logfile and not hasattr(config, "workerinput"):
+        config._junitxray = junit_xml_xray_xml.LogJunitXrayXml(
+            logfile=logfile,
+            family=config.getini("junit_family"),
+            log_passing_tests=config.getini("junit_log_passing_tests")
+        )
         config.pluginmanager.register(config._junitxray)
 
 

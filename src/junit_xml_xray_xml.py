@@ -16,7 +16,7 @@ from _pytest.reports import TestReport
 
 
 class LogJunitXrayXml(object):
-    def __init__(self, logfile: str, logging: str = "no", family: str,
+    def __init__(self, logfile: str, family: str, logging: str = "no",
                  log_passing_tests: bool = True) -> None:
         """
 
@@ -90,7 +90,7 @@ class LogJunitXrayXml(object):
 
     def pytest_runtest_logreport(self, report: TestReport) -> None:
         if report.when == "call" or report.failed:
-            if self.familiy in ("xunit1", "xray") :
+            if self.familiy in ("xunit1", "xray"):
                 test_result_node = Element(
                     "testcase",
                     classname="",
@@ -142,7 +142,9 @@ class LogJunitXrayXml(object):
                         report.user_properties,
                         properties_node
                     )
-                    _process_test_summary(report.user_properties, properties_node)
+                    _process_test_summary(
+                        report.user_properties, properties_node
+                    )
                     _process_test_key(report.user_properties, properties_node)
                     _process_test_id(report.user_properties, properties_node)
 
