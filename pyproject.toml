@@ -51,6 +51,5 @@ version_file = "src/_version.py"
 version_scheme = "python-basic-semver"
 local_scheme = "no-local-version"
 
-
 [tool.pytest.ini_options]
 pythonpath = "src"
