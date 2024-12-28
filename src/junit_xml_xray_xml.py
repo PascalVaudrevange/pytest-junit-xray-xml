@@ -90,7 +90,7 @@ class LogJunitXrayXml(object):
 
     def pytest_runtest_logreport(self, report: TestReport) -> None:
         if report.when == "call" or report.failed:
-            if self.familiy in ("xunit1", "xray"):
+            if self.family in ("xunit1", "xray"):
                 test_result_node = Element(
                     "testcase",
                     classname="",
