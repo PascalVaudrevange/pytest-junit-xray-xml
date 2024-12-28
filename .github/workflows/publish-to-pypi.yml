@@ -1,9 +1,10 @@
 name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 
-on: pull_request:
-  branches:
+on:
+  pull_request:
+    branches:
     - main
-  types:
+    types:
     - closed
 
 jobs:
@@ -36,12 +37,11 @@ jobs:
       - name: Test with pytest
         run: |
           pytest tests/
-    build:
+  build:
     name: Build distribution 📦
     needs:
     - test
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
       with:
