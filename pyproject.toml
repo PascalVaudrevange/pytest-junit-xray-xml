@@ -49,7 +49,7 @@ pytest_junit_xray_xml = "src"
 [tool.setuptools_scm]
 version_file = "src/_version.py"
 version_scheme = "python-basic-semver"
-local_version = "no-local-version"
+local_scheme = "no-local-version"
 
 
 [tool.pytest.ini_options]
