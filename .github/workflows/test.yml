@@ -8,8 +8,8 @@ on:
     branches:
     - "main"
     types:
-    - opened
-    - ready_for_review
+      - opened
+      - ready_for_review
   push:
     branches:
     - "main"

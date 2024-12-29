@@ -1,9 +1,9 @@
-name: Publish Python package to PyPI and TestPyPI
+name: Publish package to PyPI and TestPyPI
 
 on:
   release:
     types:
-    - published
+    - released
 
 jobs:
   test:
@@ -30,7 +30,7 @@ jobs:
       run: |
         pytest tests/
   build:
-    name: Build distribution 📦
+    name: Build package
     needs:
     - test
     runs-on: ubuntu-latest
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/pytest-junit-xray-xml  # Replace <package-name> with your PyPI project name
+      url: https://pypi.org/p/pytest-junit-xray-xml
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 
@@ -97,7 +97,7 @@ jobs:
       with:
         name: python-package-distributions
         path: dist/
-    - name: Publish distribution 📦 to TestPyPI
+    - name: Publish package to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
