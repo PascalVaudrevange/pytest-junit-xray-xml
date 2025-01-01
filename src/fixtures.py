@@ -22,14 +22,6 @@ def _record_single_item(user_properties, key: str, value: str):
         )
 
 
-def _get_test_evidence_property_item(name: str, content: str) -> dict:
-    result = {
-        "filename": name,
-        "content": base64.b64encode(content).decode("ascii")
-    }
-    return result
-
-
 @pytest.fixture
 def record_test_evidence(request: FixtureRequest) -> typing.Callable[[dict],
                                                                      None]:
