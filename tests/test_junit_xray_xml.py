@@ -44,7 +44,7 @@ def test_single_description(pytester: Pytester):
     from pytest_junit_xray_xml import record_test_description
 
 
-    def test_record_pass(record_test_description):
+    def test_record_single_description(record_test_description):
         record_test_description("{expected_description}")
         assert True
 
@@ -63,7 +63,7 @@ def test_multiple_descriptions(pytester: Pytester):
     from pytest_junit_xray_xml import record_test_description
 
 
-    def test_record_pass(record_test_description):
+    def test_record_multiple_descriptions(record_test_description):
         record_test_description("This is my test description line 1")
         record_test_description("and line 2.")
         assert True
@@ -116,7 +116,7 @@ def test_single_key(pytester: Pytester):
     pytester.makepyfile(f"""
     from pytest_junit_xray_xml import record_test_key
 
-    def test_record_pass(record_test_key):
+    def test_record_test_key(record_test_key):
         record_test_key("{expected_key}")
         assert True
 
