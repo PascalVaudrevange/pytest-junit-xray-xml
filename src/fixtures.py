@@ -1,4 +1,5 @@
 import base64
+import io
 import typing
 
 import pytest
@@ -21,29 +22,47 @@ def _record_single_item(user_properties, key: str, value: str):
         )
 
 
-def __get_test_evidence_property_item(name: str, content: str) -> dict:
-    result = {
-        "filename": name,
-        "content": base64.b64encode(content).decode("ascii")
-    }
-    return result
-
-
 @pytest.fixture
 def record_test_evidence(request: FixtureRequest) -> typing.Callable[[dict],
                                                                      None]:
-    """records test evidence for consumption by the Jira Xray plugin
+    class InMemoryFile(io.BytesIO):
+        def __init__(self, filename: str, mode: str = "wb",
+                     encoding: str = "UTF-8", *args, **kwargs):
+            self.__filename = filename
+            self.__mode = mode
+            self.__encoding = encoding
+            super().__init__()
 
-    The evidence is attached to the test run object in Jira/Xray as files with"
-    names by their keys
-    """
-    def _record_test_evidence(evidences: dict) -> None:
-        for name_, evidence_ in evidences.items():
-            item_ = __get_test_evidence_property_item(name_, evidence_)
-            request.node.user_properties.append(
-                ("test_evidence", item_)
+        def __exit__(self, *args, **kwargs):
+            item = self._get_test_evidence_encoded(
+                self.__filename, self.getvalue()
             )
-    return _record_test_evidence
+            request.node.user_properties.append(
+                ("test_evidence", item)
+            )
+            super().__exit__()
+
+        def _get_test_evidence_encoded(self, name: str, content: str) -> dict:
+            result = {
+                "filename": name,
+                "content": base64.b64encode(content).decode("ascii")
+            }
+            return result
+
+        def write(self, b, *args, **kwargs):
+            if "b" in self.__mode:
+                super().write(b)
+            elif self.__encoding is None:
+                raise ValueError(
+                    f"Calling InMemoryFile(filename='{self.__filename}', "
+                    f"mode='{self.__mode}', encoding='{self.__encoding}') "
+                    "is not supported: if mode is not binary, you must "
+                    "supply an encoding"
+                )
+            else:
+                super().write(b.encode(self.__encoding), *args, **kwargs)
+
+    return InMemoryFile
 
 
 @pytest.fixture

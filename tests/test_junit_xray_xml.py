@@ -1,5 +1,6 @@
+import base64
 import logging
-from xml.etree import ElementTree
+import xml.etree.ElementTree as ET
 
 from _pytest.pytester import Pytester
 
@@ -32,30 +33,8 @@ def run_and_parse(pytester: Pytester, family: str = "xunit1") -> tuple:
     if family == "xunit2":
         with xml_path.open(encoding="utf-8") as f:
             pass  # schema.validate(f)
-    xmldoc = ElementTree.parse(str(xml_path))
+    xmldoc = ET.parse(str(xml_path))
     return result, xmldoc.getroot()
-
-
-def test_single_evidence(pytester: Pytester):
-    pytester.makepyfile("""
-    import pytest
-    from pytest_junit_xray_xml import record_test_evidence
-
-
-    def test_record_pass(record_test_evidence):
-        evidences = {
-            "file1.txt": "My file content is text".encode("UTF-8")
-        }
-        record_test_evidence(evidences)
-        assert True
-
-    """)
-    _, root_node = run_and_parse(pytester, None)
-    actual_evidence = root_node.find(
-        "./testcase/properties"
-        "/property[@name='testrun_evidence']/item[@name='file1.txt']"
-    )
-    assert actual_evidence.text == "TXkgZmlsZSBjb250ZW50IGlzIHRleHQ="
 
 
 def test_single_description(pytester: Pytester):
@@ -65,7 +44,7 @@ def test_single_description(pytester: Pytester):
     from pytest_junit_xray_xml import record_test_description
 
 
-    def test_record_pass(record_test_description):
+    def test_record_single_description(record_test_description):
         record_test_description("{expected_description}")
         assert True
 
@@ -84,7 +63,7 @@ def test_multiple_descriptions(pytester: Pytester):
     from pytest_junit_xray_xml import record_test_description
 
 
-    def test_record_pass(record_test_description):
+    def test_record_multiple_descriptions(record_test_description):
         record_test_description("This is my test description line 1")
         record_test_description("and line 2.")
         assert True
@@ -137,7 +116,7 @@ def test_single_key(pytester: Pytester):
     pytester.makepyfile(f"""
     from pytest_junit_xray_xml import record_test_key
 
-    def test_record_pass(record_test_key):
+    def test_record_test_key(record_test_key):
         record_test_key("{expected_key}")
         assert True
 
@@ -158,4 +137,51 @@ def test_pass(pytester: Pytester):
     node = root_node.find(
         "./testcase[@name='test_pass']"
     )
-    assert len(node) == 0, ElementTree.tostring(node)
+    assert len(node) == 0, ET.tostring(node)
+
+
+def test_record_test_evidence_text(pytester: Pytester):
+    encoding = "UTF-8"
+    file_content = "My file content is text"
+    pytester.makepyfile(f"""
+    from pytest_junit_xray_xml import record_test_evidence
+
+    def test_record_test_evidence(record_test_evidence):
+        with record_test_evidence("file1.txt", "w", encoding="{encoding}") as f:
+            f.write("{file_content}")
+        assert True
+    """)
+    _, root_node = run_and_parse(pytester, None)
+    actual_evidence = root_node.find(
+        "./testcase/properties"
+        "/property[@name='testrun_evidence']/item[@name='file1.txt']"
+    ).text
+    expected_evidence = base64.b64encode(file_content.encode(encoding)).decode("us-ascii")
+    assert actual_evidence == expected_evidence
+
+
+def test_record_test_evidence_xml(pytester: Pytester):
+    pytester.makepyfile("""
+    from xml.etree.ElementTree import ElementTree, Element, canonicalize
+    from pytest_junit_xray_xml import record_test_evidence
+
+    def test_record_test_evidence(record_test_evidence):
+        xml_content = ElementTree(Element("my_root", my_attribute="1"))
+        with record_test_evidence("file1.xml", "wb") as f:
+            xml_content.write(f)
+
+        assert True
+    """)
+    _, root_node = run_and_parse(pytester, None)
+    test_evidence = (
+        root_node.find(
+            "./testcase/properties"
+            "/property[@name='testrun_evidence']/item[@name='file1.xml']"
+        )
+        .text
+        .encode("us-ascii")
+    )
+    actual_evidence = ET.canonicalize(base64.b64decode(test_evidence))
+    xml_content = ET.Element("my_root", my_attribute="1")
+    expected_evidence = ET.canonicalize(ET.tostring(xml_content))
+    assert actual_evidence == expected_evidence
