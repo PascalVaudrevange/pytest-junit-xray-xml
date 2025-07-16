@@ -1,9 +1,14 @@
+import datetime
 import os.path
 import pathlib
 import platform
-import time
+import re
 from xml.etree.ElementTree import Element, ElementTree, indent
 from xml.sax.saxutils import escape, quoteattr
+
+from _pytest.reports import TestReport
+from _pytest import nodes
+
 
 from .exceptions import (
     MoreThanOneTestSummaryError,
@@ -11,8 +16,6 @@ from .exceptions import (
     MoreThanOneTestKeyError
 )
 from .utils import find_items_from_user_properties
-
-from _pytest.reports import TestReport
 
 
 class LogJunitXrayXml(object):
@@ -27,17 +30,19 @@ class LogJunitXrayXml(object):
         xmlfile = os.path.expanduser(os.path.expandvars(logfile))
         self.xmlfile = os.path.normpath(os.path.abspath(xmlfile))
         self.family = family
+        self.location = None
         self.logging = logging
         self.log_passing_tests = log_passing_tests
         self.suite_start_time = None
-        self.element_tree = ElementTree(Element("test_suite"))
-
+        self.element_tree = ElementTree(Element("testsuites", name="pytest tests"))
+        self.test_suite = Element("testsuite")
+        self.element_tree.getroot().insert(0, self.test_suite)
         if self.family == "legacy":
             self.family = "xunit1"
 
     @property
     def suite_node(self):
-        result = self.element_tree.getroot()
+        result = self.test_suite
         return result
 
     def _get_number_of_failed_tests(self) -> int:
@@ -57,15 +62,16 @@ class LogJunitXrayXml(object):
         return result
 
     def pytest_sessionstart(self) -> None:
-        self.suite_start_time = time.time()
+        self.suite_start_time = datetime.datetime.now(datetime.timezone.utc)
 
     def pytest_sessionfinish(self) -> None:
-        suite_stop_time = time.time()
-        suite_time_delta = suite_stop_time - self.suite_start_time
-
+        suite_stop_time = datetime.datetime.now(datetime.timezone.utc)
+        suite_time_delta = (suite_stop_time - self.suite_start_time).total_seconds()
+        timestamp = self.suite_start_time.astimezone().isoformat()
         self.suite_node.set("name", "pytest")
         self.suite_node.set("tests", f"{len(self.suite_node)}")
         self.suite_node.set("time", f"{suite_time_delta:.3f}")
+        self.suite_node.set("timestamp", timestamp)
         self.suite_node.set("hostname", platform.node())
         self.suite_node.set(
             "failures",
@@ -90,21 +96,26 @@ class LogJunitXrayXml(object):
 
     def pytest_runtest_logreport(self, report: TestReport) -> None:
         if report.when == "call" or report.failed:
+            file = pathlib.Path(self.location[0]).as_posix()
+            classname = _get_classname(report.nodeid, "")
+            name = self.location[2]
+            duration = f'{report.duration:.3f}'
             if self.family in ("xunit1", "xray"):
                 test_result_node = Element(
                     "testcase",
-                    classname="",
-                    name=self.location[2],
-                    file=pathlib.Path(self.location[0]).as_posix(),
+                    classname=classname,
+                    name=name,
+                    file=file,
                     line=f'{self.location[1]}',
-                    duration=f'{report.duration}'
+                    duration=duration
                 )
             elif self.family == "xunit2":
                 test_result_node = Element(
                     "testcase",
-                    classname="",
-                    name=self.location[2],
-                    duration=f'{report.duration}'
+                    classname=classname,
+                    name=name,
+                    duration=duration,
+                    timestamp=f'{report.timestamp}'
                 )
             else:
                 raise NotImplementedError(
@@ -276,3 +287,22 @@ def _process_caplog_capstdout_capstderr(report: TestReport,
                 " Captured Err "
             )
             test_result_node.append(stderr_node)
+
+
+def mangle_test_address(address: str) -> list[str]:
+    path, possible_open_bracket, params = address.partition("[")
+    names = path.split("::")
+    # Convert file path to dotted path.
+    names[0] = names[0].replace(nodes.SEP, ".")
+    names[0] = re.sub(r"\.py$", "", names[0])
+    # Put any params back.
+    names[-1] += possible_open_bracket + params
+    return names
+
+def _get_classname(nodeid: str, xml_prefix: str) -> str:
+        names = mangle_test_address(nodeid)[:-1]
+        classnames = names[:-1]
+        if xml_prefix:
+            classnames.insert(0, xml_prefix)
+        result = ".".join(names)
+        return result

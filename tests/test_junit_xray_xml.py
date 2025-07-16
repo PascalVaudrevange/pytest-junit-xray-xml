@@ -2,6 +2,8 @@ import base64
 import logging
 import xml.etree.ElementTree as ET
 
+import pytest
+
 from _pytest.pytester import Pytester
 
 logger = logging.getLogger(__name__)
@@ -51,7 +53,7 @@ def test_single_description(pytester: Pytester):
     """)
     _, root_node = run_and_parse(pytester, None)
     actual_description = root_node.find(
-        "./testcase/properties/property[@name='test_description']"
+        "./testsuite/testcase/properties/property[@name='test_description']"
     )
     assert actual_description.text == expected_description
 
@@ -71,7 +73,7 @@ def test_multiple_descriptions(pytester: Pytester):
     """)
     _, root_node = run_and_parse(pytester, None)
     actual_description = root_node.find(
-        "./testcase/properties/property[@name='test_description']"
+        "./testsuite/testcase/properties/property[@name='test_description']"
     )
     assert actual_description.text == expected_description
 
@@ -88,7 +90,7 @@ def test_single_summary(pytester: Pytester):
     """)
     _, root_node = run_and_parse(pytester, None)
     actual_description = root_node.find(
-        "./testcase/properties/property[@name='test_summary']"
+        "./testsuite/testcase/properties/property[@name='test_summary']"
     )
     assert actual_description.attrib["value"] == expected_summary
 
@@ -123,7 +125,7 @@ def test_single_key(pytester: Pytester):
     """)
     _, root_node = run_and_parse(pytester, None)
     actual_key = root_node.find(
-        "./testcase/properties/property[@name='test_key']"
+        "./testsuite/testcase/properties/property[@name='test_key']"
     )
     assert actual_key.attrib["value"] == expected_key
 
@@ -135,7 +137,7 @@ def test_pass(pytester: Pytester):
     """)
     _, root_node = run_and_parse(pytester, None)
     node = root_node.find(
-        "./testcase[@name='test_pass']"
+        "./testsuite/testcase[@name='test_pass']"
     )
     assert len(node) == 0, ET.tostring(node)
 
@@ -153,7 +155,7 @@ def test_record_test_evidence_text(pytester: Pytester):
     """)
     _, root_node = run_and_parse(pytester, None)
     actual_evidence = root_node.find(
-        "./testcase/properties"
+        "./testsuite/testcase/properties"
         "/property[@name='testrun_evidence']/item[@name='file1.txt']"
     ).text
     expected_evidence = base64.b64encode(file_content.encode(encoding)).decode("us-ascii")
@@ -175,7 +177,7 @@ def test_record_test_evidence_xml(pytester: Pytester):
     _, root_node = run_and_parse(pytester, None)
     test_evidence = (
         root_node.find(
-            "./testcase/properties"
+            "./testsuite/testcase/properties"
             "/property[@name='testrun_evidence']/item[@name='file1.xml']"
         )
         .text
@@ -185,3 +187,8 @@ def test_record_test_evidence_xml(pytester: Pytester):
     xml_content = ET.Element("my_root", my_attribute="1")
     expected_evidence = ET.canonicalize(ET.tostring(xml_content))
     assert actual_evidence == expected_evidence
+
+
+@pytest.mark.parametrize("number", [1,2,3])
+def test_parametrized(number: int):
+    assert number == 1

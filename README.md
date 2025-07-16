@@ -26,6 +26,18 @@ python -m pytest tests/examples.py --junit-xray-xml xray.xml
 
 The following fixtures are supported.
 
+## Usage of standard pytest JUnit reporter
+
+If you want to use the standard pytest JUnit reporter, you must instruct pytest-junit to use the family "xunit1" or "xunit2" in a config ini-file 
+```ini
+[pytest]
+junit_family = xunit2
+```
+and then run the tests via 
+```shell
+python -m pytest <folder with tests> -c <config_file.ini> --junitxml junit.xml
+```
+
 ### record_test_key
 stores the test key in a property named `test_key`. Xray will attach the test results to the test case identified by this key.
 
